@@ -1,183 +1,208 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="#F5F5F5"
     android:padding="16dp">
 
-    <ScrollView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="通话记录生成器"
+            android:textSize="20sp"
+            android:textColor="#2196F3"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="12dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="生成数量"
+            android:textSize="14sp"
+            android:textColor="#555555"/>
+
+        <EditText
+            android:id="@+id/et_count"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="10"
+            android:hint="1-500"
+            android:minHeight="48dp"
+            android:background="#FFFFFF"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="指定号码（可选，留空随机）"
+            android:textSize="14sp"
+            android:textColor="#555555"
+            android:layout_marginTop="8dp"/>
+
+        <EditText
+            android:id="@+id/et_phone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="phone"
+            android:hint="留空则随机生成"
+            android:minHeight="48dp"
+            android:background="#FFFFFF"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="归属地"
+            android:textSize="14sp"
+            android:textColor="#555555"
+            android:layout_marginTop="8dp"/>
+
+        <Spinner
+            android:id="@+id/sp_location"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#FFFFFF"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="呼叫类型"
+            android:textSize="14sp"
+            android:textColor="#555555"
+            android:layout_marginTop="8dp"/>
+
+        <RadioGroup
+            android:id="@+id/rg_call_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rb_call_random"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="随机"
+                android:checked="true"/>
+
+            <RadioButton
+                android:id="@+id/rb_call_in"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="呼入"/>
+
+            <RadioButton
+                android:id="@+id/rb_call_out"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="呼出"/>
+
+            <RadioButton
+                android:id="@+id/rb_call_miss"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="未接"/>
+        </RadioGroup>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
 
-            <!-- 标题 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="通话记录生成器"
-                android:textSize="20sp"
-                android:textColor="#2196F3"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:padding="12dp"/>
-
-            <!-- 生成数量 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="生成数量"
-                android:textSize="14sp"
-                android:textColor="#555555"
-                android:layout_marginTop="8dp"/>
-            <EditText
-                android:id="@+id/et_count"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:inputType="number"
-                android:text="10"
-                android:hint="1-500"
-                android:background="#FFFFFF"
-                android:padding="12dp"
-                android:layout_marginTop="4dp"/>
-
-            <!-- 指定号码 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="指定号码（可选，留空随机）"
-                android:textSize="14sp"
-                android:textColor="#555555"
-                android:layout_marginTop="8dp"/>
-            <EditText
-                android:id="@+id/et_phone"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:inputType="phone"
-                android:hint="留空则随机生成"
-                android:background="#FFFFFF"
-                android:padding="12dp"
-                android:layout_marginTop="4dp"/>
-
-            <!-- 归属地 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="归属地"
-                android:textSize="14sp"
-                android:textColor="#555555"
-                android:layout_marginTop="8dp"/>
-            <Spinner
-                android:id="@+id/sp_location"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="#FFFFFF"
-                android:layout_marginTop="4dp"/>
-
-            <!-- 呼叫类型 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="呼叫类型"
-                android:textSize="14sp"
-                android:textColor="#555555"
-                android:layout_marginTop="12dp"/>
-            <RadioGroup
-                android:id="@+id/rg_call_type"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="4dp">
-                <RadioButton android:id="@+id/rb_call_random" android:text="随机" android:checked="true"/>
-                <RadioButton android:id="@+id/rb_call_in" android:text="呼入"/>
-                <RadioButton android:id="@+id/rb_call_out" android:text="呼出"/>
-                <RadioButton android:id="@+id/rb_call_miss" android:text="未接"/>
-            </RadioGroup>
-
-            <!-- 时长 -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-                    <TextView android:text="最小时长(秒)" android:textSize="14sp" android:textColor="#555555"/>
-                    <EditText
-                        android:id="@+id/et_min_duration"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:inputType="number"
-                        android:text="5"
-                        android:background="#FFFFFF"
-                        android:padding="12dp"
-                        android:layout_marginTop="4dp"/>
-                </LinearLayout>
-                <View android:layout_width="12dp" android:layout_height="1dp"/>
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-                    <TextView android:text="最大时长(秒)" android:textSize="14sp" android:textColor="#555555"/>
-                    <EditText
-                        android:id="@+id/et_max_duration"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:inputType="number"
-                        android:text="300"
-                        android:background="#FFFFFF"
-                        android:padding="12dp"
-                        android:layout_marginTop="4dp"/>
-                </LinearLayout>
-            </LinearLayout>
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-            <!-- 固话 -->
-            <CheckBox
-                android:id="@+id/cb_landline"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="包含固话号码"
-                android:layout_marginTop="8dp"/>
-
-            <!-- 生成按钮 -->
-            <Button
-                android:id="@+id/btn_generate"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="生成并写入通话记录"
-                android:textSize="16sp"
-                android:textColor="#FFFFFF"
-                android:background="#2196F3"
-                android:layout_marginTop="16dp"/>
-
-            <!-- 结果提示 -->
-            <LinearLayout
-                android:id="@+id/result_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:background="#E8F5E9"
-                android:padding="16dp"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="16dp">
                 <TextView
-                    android:id="@+id/tv_result"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:text="最小时长(秒)"
                     android:textSize="14sp"
-                    android:textColor="#333333"/>
+                    android:textColor="#555555"/>
+
+                <EditText
+                    android:id="@+id/et_min_duration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:text="5"
+                    android:minHeight="48dp"
+                    android:background="#FFFFFF"/>
             </LinearLayout>
 
+            <View android:layout_width="12dp" android:layout_height="1dp"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="最大时长(秒)"
+                    android:textSize="14sp"
+                    android:textColor="#555555"/>
+
+                <EditText
+                    android:id="@+id/et_max_duration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:text="300"
+                    android:minHeight="48dp"
+                    android:background="#FFFFFF"/>
+            </LinearLayout>
         </LinearLayout>
-    </ScrollView>
-</LinearLayout>
+
+        <CheckBox
+            android:id="@+id/cb_landline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="包含固话号码"
+            android:layout_marginTop="8dp"/>
+
+        <Button
+            android:id="@+id/btn_generate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="52dp"
+            android:text="生成并写入通话记录"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:background="#2196F3"
+            android:layout_marginTop="16dp"/>
+
+        <LinearLayout
+            android:id="@+id/result_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:background="#E8F5E9"
+            android:padding="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/tv_result"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#333333"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
