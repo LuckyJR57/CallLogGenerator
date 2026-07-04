@@ -1,13 +1,15 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+}
 
 android {
-    compileSdkVersion 34
+    compileSdk 34
     namespace 'com.calllog.generator'
 
     defaultConfig {
         applicationId "com.calllog.generator"
-        minSdkVersion 21
-        targetSdkVersion 34
+        minSdk 21
+        targetSdk 34
         versionCode 1
         versionName "1.0.0"
     }
