@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.ContentValues;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.CallLog;
@@ -30,6 +31,7 @@ public class MainActivity extends Activity {
     };
 
     private static final int REQUEST_PERMISSIONS = 100;
+    private static final Uri CALL_LOG_URI = CallLog.Calls.CONTENT_URI;
 
     private EditText etCount, etPhone, etMinDuration, etMaxDuration;
     private Spinner spLocation;
@@ -39,48 +41,61 @@ public class MainActivity extends Activity {
     private TextView tvResult;
     private LinearLayout resultContainer;
     private Random random = new Random();
-
     private int callType = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        try {
+            setContentView(R.layout.activity_main);
 
-        etCount = findViewById(R.id.et_count);
-        etPhone = findViewById(R.id.et_phone);
-        etMinDuration = findViewById(R.id.et_min_duration);
-        etMaxDuration = findViewById(R.id.et_max_duration);
-        spLocation = findViewById(R.id.sp_location);
-        rgCallType = findViewById(R.id.rg_call_type);
-        cbLandline = findViewById(R.id.cb_landline);
-        btnGenerate = findViewById(R.id.btn_generate);
-        tvResult = findViewById(R.id.tv_result);
-        resultContainer = findViewById(R.id.result_container);
+            etCount = (EditText) findViewById(R.id.et_count);
+            etPhone = (EditText) findViewById(R.id.et_phone);
+            etMinDuration = (EditText) findViewById(R.id.et_min_duration);
+            etMaxDuration = (EditText) findViewById(R.id.et_max_duration);
+            spLocation = (Spinner) findViewById(R.id.sp_location);
+            rgCallType = (RadioGroup) findViewById(R.id.rg_call_type);
+            cbLandline = (CheckBox) findViewById(R.id.cb_landline);
+            btnGenerate = (Button) findViewById(R.id.btn_generate);
+            tvResult = (TextView) findViewById(R.id.tv_result);
+            resultContainer = (LinearLayout) findViewById(R.id.result_container);
 
-        // 城市列表
-        List<String> cityList = new ArrayList<>();
-        cityList.add("随机");
-        cityList.addAll(Arrays.asList(LOCATIONS));
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-            android.R.layout.simple_spinner_item, cityList);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spLocation.setAdapter(adapter);
+            List<String> cityList = new ArrayList<>();
+            cityList.add("随机");
+            cityList.addAll(Arrays.asList(LOCATIONS));
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, cityList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spLocation.setAdapter(adapter);
 
-        rgCallType.setOnCheckedChangeListener((group, id) -> {
-            if (id == R.id.rb_call_random) callType = 0;
-            else if (id == R.id.rb_call_in) callType = 1;
-            else if (id == R.id.rb_call_out) callType = 2;
-            else if (id == R.id.rb_call_miss) callType = 3;
-        });
+            rgCallType.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(RadioGroup group, int id) {
+                    if (id == R.id.rb_call_random) callType = 0;
+                    else if (id == R.id.rb_call_in) callType = 1;
+                    else if (id == R.id.rb_call_out) callType = 2;
+                    else if (id == R.id.rb_call_miss) callType = 3;
+                }
+            });
 
-        btnGenerate.setOnClickListener(v -> checkPermissionsAndGenerate());
+            btnGenerate.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    checkPermissionsAndGenerate();
+                }
+            });
+        } catch (Exception e) {
+            // If layout inflation fails, show a simple toast via system
+            e.printStackTrace();
+        }
     }
 
     private void checkPermissionsAndGenerate() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(Manifest.permission.WRITE_CALL_LOG) != PackageManager.PERMISSION_GRANTED
-                || checkSelfPermission(Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+            if (checkSelfPermission(Manifest.permission.WRITE_CALL_LOG)
+                != PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.READ_CALL_LOG)
+                != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(
                     new String[]{
                         Manifest.permission.WRITE_CALL_LOG,
@@ -97,11 +112,10 @@ public class MainActivity extends Activity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_PERMISSIONS) {
             boolean allGranted = true;
-            for (int result : grantResults) {
-                if (result != PackageManager.PERMISSION_GRANTED) {
+            for (int r : grantResults) {
+                if (r != PackageManager.PERMISSION_GRANTED) {
                     allGranted = false;
                     break;
                 }
@@ -110,7 +124,7 @@ public class MainActivity extends Activity {
                 doGenerate();
             } else {
                 resultContainer.setVisibility(View.VISIBLE);
-                tvResult.setText("需要通话记录权限才能使用。\n请到 设置 → 应用 → 通话记录生成器 → 权限 中手动开启。");
+                tvResult.setText("需要通话记录权限。\n请到 设置→应用→通话记录生成器→权限 中开启。");
             }
         }
     }
@@ -119,17 +133,20 @@ public class MainActivity extends Activity {
         int count;
         try {
             count = Integer.parseInt(etCount.getText().toString().trim());
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             count = 10;
         }
         if (count < 1) count = 1;
         if (count > 500) count = 500;
 
         String specificPhone = etPhone.getText().toString().trim();
-        if (specificPhone.isEmpty()) specificPhone = null;
+        if (specificPhone.length() == 0) specificPhone = null;
 
-        String location = spLocation.getSelectedItem().toString();
-        if ("随机".equals(location)) location = null;
+        String location = null;
+        try {
+            String sel = spLocation.getSelectedItem().toString();
+            if (!"随机".equals(sel)) location = sel;
+        } catch (Exception ignored) {}
 
         int minDur = 5, maxDur = 300;
         try { minDur = Integer.parseInt(etMinDuration.getText().toString().trim()); } catch (Exception ignored) {}
@@ -151,20 +168,24 @@ public class MainActivity extends Activity {
                 values.put(CallLog.Calls.NUMBER, phone);
 
                 int type = getCallType();
-                values.put(CallLog.Calls.TYPE, type);
+                values.put(CallLog.Calls.TYPE, Integer.valueOf(type));
 
-                int duration = (type == CallLog.Calls.MISSED_TYPE) ? 0 : minDur + random.nextInt(maxDur - minDur + 1);
-                values.put(CallLog.Calls.DURATION, duration);
+                int duration = (type == CallLog.Calls.MISSED_TYPE) ? 0
+                    : minDur + random.nextInt(maxDur - minDur + 1);
+                values.put(CallLog.Calls.DURATION, Long.valueOf(duration));
 
                 long callTime = thirtyDaysAgo + (long)(random.nextDouble() * (now - thirtyDaysAgo));
-                values.put(CallLog.Calls.DATE, callTime);
+                values.put(CallLog.Calls.DATE, Long.valueOf(callTime));
 
-                values.put(CallLog.Calls.NEW, type == CallLog.Calls.MISSED_TYPE ? 1 : 0);
+                values.put(CallLog.Calls.NEW, Integer.valueOf(type == CallLog.Calls.MISSED_TYPE ? 1 : 0));
 
-                String loc = location != null ? location : randomLocation();
-                values.put(CallLog.Calls.GEOCODED_LOCATION, loc);
+                // GEOCODED_LOCATION may not exist on older Android versions, wrap safely
+                try {
+                    String loc = location != null ? location : randomLocation();
+                    values.put(CallLog.Calls.GEOCODED_LOCATION, loc);
+                } catch (Exception ignored) {}
 
-                getContentResolver().insert(CallLog.Calls.CONTENT_URI, values);
+                getContentResolver().insert(CALL_LOG_URI, values);
                 inserted++;
             }
         } catch (Exception e) {
@@ -173,9 +194,9 @@ public class MainActivity extends Activity {
 
         resultContainer.setVisibility(View.VISIBLE);
         if (inserted == 0) {
-            tvResult.setText("写入失败！\n请确保已授予通话记录权限。\n路径：设置 → 应用 → 通话记录生成器 → 权限");
+            tvResult.setText("写入失败！\n1. 请到 设置→应用→通话记录生成器→权限 开启通话记录权限\n2. 部分手机需在拨号设置中允许第三方修改通话记录");
         } else {
-            tvResult.setText("✅ 成功写入 " + inserted + " 条通话记录！\n请打开手机拨号/通话记录查看。");
+            tvResult.setText("成功写入 " + inserted + " 条通话记录！\n请打开手机拨号/通话记录查看。");
         }
     }
 
