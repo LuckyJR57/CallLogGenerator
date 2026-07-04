@@ -2,6 +2,8 @@ package com.calllog.generator;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -9,6 +11,7 @@ import android.os.Bundle;
 import android.provider.CallLog;
 import android.view.View;
 import android.widget.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
@@ -36,11 +39,15 @@ public class MainActivity extends Activity {
     private Spinner spLocation;
     private RadioGroup rgCallType;
     private CheckBox cbLandline;
-    private Button btnGenerate;
+    private Button btnGenerate, btnStartDate, btnEndDate, btnStartTime, btnEndTime;
     private TextView tvResult;
     private LinearLayout resultContainer;
     private Random random = new Random();
     private int callType = 0;
+
+    private Calendar startCal, endCal;
+    private SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+    private SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,10 +62,28 @@ public class MainActivity extends Activity {
         rgCallType = (RadioGroup) findViewById(R.id.rg_call_type);
         cbLandline = (CheckBox) findViewById(R.id.cb_landline);
         btnGenerate = (Button) findViewById(R.id.btn_generate);
+        btnStartDate = (Button) findViewById(R.id.btn_start_date);
+        btnEndDate = (Button) findViewById(R.id.btn_end_date);
+        btnStartTime = (Button) findViewById(R.id.btn_start_time);
+        btnEndTime = (Button) findViewById(R.id.btn_end_time);
         tvResult = (TextView) findViewById(R.id.tv_result);
         resultContainer = (LinearLayout) findViewById(R.id.result_container);
 
-        // Setup location spinner
+        // Init calendars
+        startCal = Calendar.getInstance();
+        startCal.add(Calendar.DAY_OF_MONTH, -30);
+        startCal.set(Calendar.HOUR_OF_DAY, 0);
+        startCal.set(Calendar.MINUTE, 0);
+        startCal.set(Calendar.SECOND, 0);
+
+        endCal = Calendar.getInstance();
+        endCal.set(Calendar.HOUR_OF_DAY, 23);
+        endCal.set(Calendar.MINUTE, 59);
+        endCal.set(Calendar.SECOND, 59);
+
+        updateDateButtons();
+
+        // Location spinner
         List<String> cityList = new ArrayList<>();
         cityList.add("随机");
         for (String loc : LOCATIONS) cityList.add(loc);
@@ -67,7 +92,7 @@ public class MainActivity extends Activity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
         spLocation.setAdapter(adapter);
 
-        // Call type radio group
+        // Call type
         rgCallType.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             public void onCheckedChanged(RadioGroup group, int id) {
                 if (id == R.id.rb_call_random) callType = 0;
@@ -77,12 +102,73 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Generate button
+        // Date pickers
+        btnStartDate.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                new DatePickerDialog(MainActivity.this, new DatePickerDialog.OnDateSetListener() {
+                    public void onDateSet(DatePicker view, int y, int m, int d) {
+                        startCal.set(Calendar.YEAR, y);
+                        startCal.set(Calendar.MONTH, m);
+                        startCal.set(Calendar.DAY_OF_MONTH, d);
+                        updateDateButtons();
+                    }
+                }, startCal.get(Calendar.YEAR), startCal.get(Calendar.MONTH),
+                   startCal.get(Calendar.DAY_OF_MONTH)).show();
+            }
+        });
+
+        btnEndDate.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                new DatePickerDialog(MainActivity.this, new DatePickerDialog.OnDateSetListener() {
+                    public void onDateSet(DatePicker view, int y, int m, int d) {
+                        endCal.set(Calendar.YEAR, y);
+                        endCal.set(Calendar.MONTH, m);
+                        endCal.set(Calendar.DAY_OF_MONTH, d);
+                        updateDateButtons();
+                    }
+                }, endCal.get(Calendar.YEAR), endCal.get(Calendar.MONTH),
+                   endCal.get(Calendar.DAY_OF_MONTH)).show();
+            }
+        });
+
+        // Time pickers
+        btnStartTime.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                new TimePickerDialog(MainActivity.this, new TimePickerDialog.OnTimeSetListener() {
+                    public void onTimeSet(TimePicker view, int h, int m) {
+                        startCal.set(Calendar.HOUR_OF_DAY, h);
+                        startCal.set(Calendar.MINUTE, m);
+                        updateDateButtons();
+                    }
+                }, startCal.get(Calendar.HOUR_OF_DAY), startCal.get(Calendar.MINUTE), true).show();
+            }
+        });
+
+        btnEndTime.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                new TimePickerDialog(MainActivity.this, new TimePickerDialog.OnTimeSetListener() {
+                    public void onTimeSet(TimePicker view, int h, int m) {
+                        endCal.set(Calendar.HOUR_OF_DAY, h);
+                        endCal.set(Calendar.MINUTE, m);
+                        updateDateButtons();
+                    }
+                }, endCal.get(Calendar.HOUR_OF_DAY), endCal.get(Calendar.MINUTE), true).show();
+            }
+        });
+
+        // Generate
         btnGenerate.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 checkPermissionsAndGenerate();
             }
         });
+    }
+
+    private void updateDateButtons() {
+        btnStartDate.setText(dateFmt.format(startCal.getTime()));
+        btnEndDate.setText(dateFmt.format(endCal.getTime()));
+        btnStartTime.setText(timeFmt.format(startCal.getTime()));
+        btnEndTime.setText(timeFmt.format(endCal.getTime()));
     }
 
     private void checkPermissionsAndGenerate() {
@@ -139,8 +225,11 @@ public class MainActivity extends Activity {
         if (maxDur < minDur) maxDur = minDur + 60;
 
         boolean includeLandline = cbLandline.isChecked();
-        long now = System.currentTimeMillis();
-        long thirtyDaysAgo = now - 30L * 24 * 3600 * 1000;
+
+        long startMs = startCal.getTimeInMillis();
+        long endMs = endCal.getTimeInMillis();
+        long range = endMs - startMs;
+        if (range <= 0) range = 1000;
 
         int inserted = 0;
         try {
@@ -156,7 +245,7 @@ public class MainActivity extends Activity {
                     : minDur + random.nextInt(maxDur - minDur + 1);
                 values.put(CallLog.Calls.DURATION, Long.valueOf(duration));
 
-                long callTime = thirtyDaysAgo + (long)(random.nextDouble() * (now - thirtyDaysAgo));
+                long callTime = startMs + (long)(random.nextDouble() * range);
                 values.put(CallLog.Calls.DATE, Long.valueOf(callTime));
 
                 values.put(CallLog.Calls.NEW, Integer.valueOf(type == CallLog.Calls.MISSED_TYPE ? 1 : 0));
