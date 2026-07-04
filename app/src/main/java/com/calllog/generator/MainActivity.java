@@ -2,13 +2,17 @@ package com.calllog.generator;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.CallLog;
+import android.provider.ContactsContract;
 import android.view.View;
 import android.widget.*;
 import java.text.SimpleDateFormat;
@@ -34,20 +38,24 @@ public class MainActivity extends Activity {
     };
 
     private static final int REQUEST_PERMISSIONS = 100;
+    private static final int REQUEST_CONTACTS_PERMISSION = 101;
 
     private EditText etCount, etPhone, etMinDuration, etMaxDuration;
     private Spinner spLocation;
     private RadioGroup rgCallType;
-    private CheckBox cbLandline;
-    private Button btnGenerate, btnStartDate, btnEndDate, btnStartTime, btnEndTime;
-    private TextView tvResult;
-    private LinearLayout resultContainer;
+    private CheckBox cbLandline, cbContacts;
+    private Button btnGenerate, btnStartDate, btnEndDate, btnStartTime, btnEndTime, btnSelectContacts;
+    private TextView tvResult, tvSelectedContacts;
+    private LinearLayout resultContainer, contactsArea;
     private Random random = new Random();
     private int callType = 0;
 
     private Calendar startCal, endCal;
     private SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm", Locale.getDefault());
+
+    // Selected contacts: name -> phone
+    private List<String[]> selectedContacts = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,13 +69,17 @@ public class MainActivity extends Activity {
         spLocation = (Spinner) findViewById(R.id.sp_location);
         rgCallType = (RadioGroup) findViewById(R.id.rg_call_type);
         cbLandline = (CheckBox) findViewById(R.id.cb_landline);
+        cbContacts = (CheckBox) findViewById(R.id.cb_contacts);
         btnGenerate = (Button) findViewById(R.id.btn_generate);
         btnStartDate = (Button) findViewById(R.id.btn_start_date);
         btnEndDate = (Button) findViewById(R.id.btn_end_date);
         btnStartTime = (Button) findViewById(R.id.btn_start_time);
         btnEndTime = (Button) findViewById(R.id.btn_end_time);
+        btnSelectContacts = (Button) findViewById(R.id.btn_select_contacts);
         tvResult = (TextView) findViewById(R.id.tv_result);
+        tvSelectedContacts = (TextView) findViewById(R.id.tv_selected_contacts);
         resultContainer = (LinearLayout) findViewById(R.id.result_container);
+        contactsArea = (LinearLayout) findViewById(R.id.contacts_area);
 
         // Init calendars
         startCal = Calendar.getInstance();
@@ -99,6 +111,34 @@ public class MainActivity extends Activity {
                 else if (id == R.id.rb_call_in) callType = 1;
                 else if (id == R.id.rb_call_out) callType = 2;
                 else if (id == R.id.rb_call_miss) callType = 3;
+            }
+        });
+
+        // Contacts checkbox
+        cbContacts.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton button, boolean checked) {
+                contactsArea.setVisibility(checked ? View.VISIBLE : View.GONE);
+                if (!checked) {
+                    selectedContacts.clear();
+                    tvSelectedContacts.setText("未选择");
+                }
+            }
+        });
+
+        // Select contacts button
+        btnSelectContacts.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (Build.VERSION.SDK_INT >= 23) {
+                    if (checkSelfPermission(Manifest.permission.READ_CONTACTS)
+                        != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(
+                            new String[]{ Manifest.permission.READ_CONTACTS },
+                            REQUEST_CONTACTS_PERMISSION
+                        );
+                        return;
+                    }
+                }
+                showContactPicker();
             }
         });
 
@@ -164,6 +204,78 @@ public class MainActivity extends Activity {
         });
     }
 
+    private void showContactPicker() {
+        final List<String[]> allContacts = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = getContentResolver().query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                new String[]{
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                },
+                null, null,
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+            );
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    String name = cursor.getString(0);
+                    String number = cursor.getString(1);
+                    if (number != null && number.length() > 0) {
+                        allContacts.add(new String[]{ name, number });
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "读取通讯录失败", Toast.LENGTH_SHORT).show();
+            return;
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+
+        if (allContacts.isEmpty()) {
+            Toast.makeText(this, "通讯录为空", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final String[] items = new String[allContacts.size()];
+        final boolean[] checked = new boolean[allContacts.size()];
+        for (int i = 0; i < allContacts.size(); i++) {
+            String[] c = allContacts.get(i);
+            items[i] = c[0] + "  " + c[1];
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle("选择联系人（可多选）")
+            .setMultiChoiceItems(items, checked, new DialogInterface.OnMultiChoiceClickListener() {
+                public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+                    checked[which] = isChecked;
+                }
+            })
+            .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    selectedContacts.clear();
+                    for (int i = 0; i < checked.length; i++) {
+                        if (checked[i]) {
+                            selectedContacts.add(allContacts.get(i));
+                        }
+                    }
+                    if (selectedContacts.isEmpty()) {
+                        tvSelectedContacts.setText("未选择");
+                    } else {
+                        StringBuilder sb = new StringBuilder();
+                        for (String[] c : selectedContacts) {
+                            if (sb.length() > 0) sb.append(", ");
+                            sb.append(c[0]);
+                        }
+                        tvSelectedContacts.setText("已选 " + selectedContacts.size() + " 人: " + sb.toString());
+                    }
+                }
+            })
+            .setNegativeButton("取消", null)
+            .show();
+    }
+
     private void updateDateButtons() {
         btnStartDate.setText(dateFmt.format(startCal.getTime()));
         btnEndDate.setText(dateFmt.format(endCal.getTime()));
@@ -199,6 +311,10 @@ public class MainActivity extends Activity {
                 resultContainer.setVisibility(View.VISIBLE);
                 tvResult.setText("需要通话记录权限。\n请到 设置→应用→通话记录生成器→权限 中开启。");
             }
+        } else if (requestCode == REQUEST_CONTACTS_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                showContactPicker();
+            }
         }
     }
 
@@ -225,6 +341,7 @@ public class MainActivity extends Activity {
         if (maxDur < minDur) maxDur = minDur + 60;
 
         boolean includeLandline = cbLandline.isChecked();
+        boolean useContacts = cbContacts.isChecked() && !selectedContacts.isEmpty();
 
         long startMs = startCal.getTimeInMillis();
         long endMs = endCal.getTimeInMillis();
@@ -235,7 +352,16 @@ public class MainActivity extends Activity {
         try {
             for (int i = 0; i < count; i++) {
                 ContentValues values = new ContentValues();
-                String phone = specificPhone != null ? specificPhone : randomPhone(includeLandline);
+
+                String phone;
+                if (specificPhone != null) {
+                    phone = specificPhone;
+                } else if (useContacts) {
+                    String[] c = selectedContacts.get(random.nextInt(selectedContacts.size()));
+                    phone = c[1];
+                } else {
+                    phone = randomPhone(includeLandline);
+                }
                 values.put(CallLog.Calls.NUMBER, phone);
 
                 int type = getCallType();
@@ -259,17 +385,20 @@ public class MainActivity extends Activity {
                 inserted++;
             }
         } catch (Exception e) {
-            tvResult.setText("写入出错: " + e.getMessage());
-            resultContainer.setVisibility(View.VISIBLE);
+            new AlertDialog.Builder(this)
+                .setTitle("写入失败")
+                .setMessage("错误: " + e.getMessage() + "\n请确保已授予通话记录权限。")
+                .setPositiveButton("确定", null)
+                .show();
             return;
         }
 
-        resultContainer.setVisibility(View.VISIBLE);
-        if (inserted == 0) {
-            tvResult.setText("写入失败！请确保已授予通话记录权限。");
-        } else {
-            tvResult.setText("成功写入 " + inserted + " 条通话记录！\n请打开手机拨号查看。");
-        }
+        // Success dialog
+        new AlertDialog.Builder(this)
+            .setTitle("生成成功 ✅")
+            .setMessage("成功写入 " + inserted + " 条通话记录！\n请打开手机拨号查看。")
+            .setPositiveButton("确定", null)
+            .show();
     }
 
     private String randomPhone(boolean includeLandline) {
